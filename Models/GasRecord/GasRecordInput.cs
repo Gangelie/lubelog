@@ -15,6 +15,7 @@
         public decimal Gallons { get; set; }
         public decimal Cost { get; set; }
         public string? FuelGrade { get; set; }
+        public string? TireSeason { get; set; }
         public bool IsFillToFull { get; set; } = true;
         public bool MissedFuelUp { get; set; } = false;
         public int StartingSoc { get; set; } = 20;
@@ -31,6 +32,7 @@
             Id = Id, 
             Cost = Cost, 
             FuelGrade = FuelGrade,
+            TireSeason = TireSeason,
             Date = DateTime.Parse(Date), 
             Gallons = Gallons, 
             Mileage = Mileage, 

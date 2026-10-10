@@ -77,6 +77,13 @@
                             }
                         </select>
                     }
+                    <label for="gasRecordTireSeason">@translator.Translate(userLanguage, "Tire Season (optional)")</label>
+                    <select id="gasRecordTireSeason" class="form-select">
+                        <!option value="" @(Model.GasRecord.TireSeason == null ? "selected" : "")>@translator.Translate(userLanguage, "Unspecified")</!option>
+                        <!option value="Summer" @(Model.GasRecord.TireSeason == "Summer" ? "selected" : "")>@translator.Translate(userLanguage, "Summer")</!option>
+                        <!option value="Winter" @(Model.GasRecord.TireSeason == "Winter" ? "selected" : "")>@translator.Translate(userLanguage, "Winter")</!option>
+                        <!option value="AllSeason" @(Model.GasRecord.TireSeason == "AllSeason" ? "selected" : "")>@translator.Translate(userLanguage, "All Season")</!option>
+                    </select>
                     <div class="form-check form-switch @(Model.UseKwh ? "d-none" : "")">
                         <input class="form-check-input" type="checkbox" role="switch" id="gasIsFillToFull" checked="@Model.GasRecord.IsFillToFull">
                         <label class="form-check-label" for="gasIsFillToFull">@translator.Translate(userLanguage,"Is Filled To Full")</label>

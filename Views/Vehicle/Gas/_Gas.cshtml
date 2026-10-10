@@ -171,6 +171,12 @@
                     </li>
                     <li class="dropdown-item" draggable="true" ondragstart="handleTableColumnDragStart(event)" ondragover="handleTableColumnDragOver(event)" ondragend="handleTableColumnDragEnd('GasRecord')">
                         <div class="list-group-item">
+                            <input class="form-check-input col-visible-toggle" data-column-toggle='tireseason' onChange="showTableColumns(this, 'GasRecord')" type="checkbox" id="chkCol_TireSeason">
+                            <label class="form-check-label stretched-link" for="chkCol_TireSeason">@translator.Translate(userLanguage, "Tire Season")</label>
+                        </div>
+                    </li>
+                    <li class="dropdown-item" draggable="true" ondragstart="handleTableColumnDragStart(event)" ondragover="handleTableColumnDragOver(event)" ondragend="handleTableColumnDragEnd('GasRecord')">
+                        <div class="list-group-item">
                             <input class="form-check-input col-visible-toggle" data-column-toggle='attachments' onChange="showTableColumns(this, 'GasRecord')" type="checkbox" id="chkCol_Attachment">
                             <label class="form-check-label stretched-link" for="chkCol_Attachment">@translator.Translate(userLanguage, "Attachments")</label>
                         </div>
@@ -216,6 +222,7 @@
                     <th scope="col" class="col-1 flex-grow-1 flex-shrink-1 text-truncate" data-column="cost" onclick="toggleSort('gas-tab-pane', this)" style="cursor:pointer;">@translator.Translate(userLanguage, "Cost")</th>
                     <th scope="col" class="col-1 flex-grow-1 flex-shrink-1 text-truncate" data-column="unitcost" onclick="toggleSort('gas-tab-pane', this)" style="cursor:pointer;">@translator.Translate(userLanguage, "Unit Cost")</th>
                     <th scope="col" class="col-2 flex-grow-1 flex-shrink-1 text-truncate" style='display:none;' data-column="fuelgrade">@translator.Translate(userLanguage, "Fuel Grade")</th>
+                    <th scope="col" class="col-2 flex-grow-1 flex-shrink-1 text-truncate" style='display:none;' data-column="tireseason">@translator.Translate(userLanguage, "Tire Season")</th>
                     <th scope="col" class="col-1 flex-grow-1 flex-shrink-1 text-truncate" style='display:none;' data-column="attachments">@translator.Translate(userLanguage, "Attachments")</th>
                     <th scope="col" class="col-3 flex-grow-1 flex-shrink-1 text-truncate" style='display:none;' data-column="notes">@translator.Translate(userLanguage, "Notes")</th>
                     @foreach (string extraFieldColumn in extraFields)
@@ -238,6 +245,7 @@
                         <td data-label="@translator.Translate(userLanguage, "Cost")" class="col-1 flex-grow-1 flex-shrink-1 text-truncate" data-column="cost" data-record-type="cost">@((hideZero && gasRecord.Cost == default) ? "---" : gasRecord.Cost.ToString(gasCostFormat))</td>
                         <td data-label="@translator.Translate(userLanguage, "Unit Cost")" class="col-1 flex-grow-1 flex-shrink-1 text-truncate" data-column="unitcost" data-gas-type="unitcost">@((hideZero && gasRecord.CostPerGallon == default) ? "---" : gasRecord.CostPerGallon.ToString(gasCostFormat))</td>
                         <td data-label="@translator.Translate(userLanguage, "Fuel Grade")" class="col-2 flex-grow-1 flex-shrink-1 text-truncate" style='display:none;' data-column="fuelgrade">@gasRecord.FuelGrade</td>
+                        <td data-label="@translator.Translate(userLanguage, "Tire Season")" class="col-2 flex-grow-1 flex-shrink-1 text-truncate" style='display:none;' data-column="tireseason">@(gasRecord.TireSeason == null ? "" : translator.Translate(userLanguage, gasRecord.TireSeason == "AllSeason" ? "All Season" : gasRecord.TireSeason))</td>
                         <td data-label="@translator.Translate(userLanguage, "Attachments")" class="col-1 flex-grow-1 flex-shrink-1 text-truncate" style='display:none;' data-column="attachments">@await Html.PartialAsync("_AttachmentColumn", gasRecord.Files)</td>
                         <td data-label="@translator.Translate(userLanguage, "Notes")" class="col-3 flex-grow-1 flex-shrink-1 @noteColumnStyle" style='display:none;' data-column="notes">@StaticHelper.TruncateStrings(gasRecord.Notes, noteColumnLength)</td>
                         @foreach (string extraFieldColumn in extraFields)
