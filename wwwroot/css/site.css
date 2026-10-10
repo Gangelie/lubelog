@@ -985,3 +985,193 @@ html[data-bs-theme="dark"] .swal2-validation-message {
 .dual-range input[type="range"].dual-range-top {
     z-index: 3;
 }
+
+/* Compact fuel entry: mobile only. Desktop fuel form is intentionally unchanged. */
+@media (max-width: 767.98px) {
+    #gasRecordModal.gas-mobile-entry .modal-dialog {
+        margin: 0;
+        max-width: none;
+        min-height: 100dvh;
+    }
+    #gasRecordModal.gas-mobile-entry .modal-content {
+        min-height: 100dvh;
+        border: none;
+        border-radius: 0;
+        background: var(--bs-tertiary-bg);
+    }
+    #gasRecordModal .gas-mobile-header {
+        position: sticky;
+        top: 0;
+        z-index: 1055;
+        display: flex;
+        align-items: center;
+        gap: .5rem;
+        padding: .7rem .8rem;
+        background: var(--bs-body-bg);
+        border-bottom: 1px solid var(--bs-border-color);
+    }
+    #gasRecordModal .gas-mobile-header .modal-title {
+        flex: 1 1 auto;
+        min-width: 0;
+        font-size: 1.05rem;
+        text-align: center;
+        overflow-wrap: anywhere;
+    }
+    #gasRecordModal .gas-mobile-back,
+    #gasRecordModal .gas-mobile-header-save {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 44px;
+        min-height: 44px;
+        padding: .4rem;
+        font-size: 1.45rem;
+        color: var(--bs-body-color);
+    }
+    #gasRecordModal .gas-mobile-header-save { color: var(--bs-primary); }
+    #gasRecordModal .gas-mobile-form-body {
+        overflow-y: auto;
+        padding: 1rem .8rem 6rem;
+    }
+    #gasRecordModal .gas-mobile-fields {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+        column-gap: .7rem;
+        row-gap: .65rem;
+        padding: 1rem .85rem;
+        background: var(--bs-body-bg);
+        border-radius: 1rem;
+    }
+    #gasRecordModal .gas-mobile-section-title,
+    #gasRecordModal .gas-mobile-date,
+    #gasRecordModal .gas-mobile-fuelgrade,
+    #gasRecordModal .gas-mobile-tire,
+    #gasRecordModal .gas-mobile-cost,
+    #gasRecordModal .gas-mobile-full,
+    #gasRecordModal .gas-mobile-soc,
+    #gasRecordModal .gas-mobile-details-toggle,
+    #gasRecordModal .gas-mobile-extra,
+    #gasRecordModal .gas-mobile-missed {
+        grid-column: 1 / -1;
+    }
+    #gasRecordModal .gas-mobile-section-title {
+        color: var(--bs-primary);
+        font-weight: 600;
+        font-size: .9rem;
+        margin: .2rem 0;
+    }
+    #gasRecordModal .gas-mobile-field {
+        min-width: 0;
+    }
+    #gasRecordModal .gas-mobile-field > label {
+        display: block;
+        margin-bottom: .3rem;
+        font-size: .9rem;
+        color: var(--bs-secondary-color);
+    }
+    #gasRecordModal .gas-mobile-mileage > label,
+    #gasRecordModal .gas-mobile-liters > label {
+        min-height: 2.6em;
+        line-height: 1.3;
+        overflow-wrap: anywhere;
+    }
+    #gasRecordModal .gas-mobile-field .form-control,
+    #gasRecordModal .gas-mobile-field .form-select {
+        min-height: 3rem;
+        font-size: 1rem;
+    }
+    #gasRecordModal .gas-mobile-field .input-group-text {
+        min-height: 3rem;
+    }
+    #gasRecordModal .gas-mobile-field .input-group {
+        min-width: 0;
+        flex-wrap: nowrap;
+    }
+    #gasRecordModal .gas-mobile-field .input-group > .form-control {
+        min-width: 0;
+        width: 1%;
+    }
+    #gasRecordModal .gas-mobile-tire .gas-mobile-native-tire-select {
+        display: none;
+    }
+    #gasRecordModal .gas-mobile-tire > label[for="gasRecordTireSeason"] { display: none; }
+    #gasRecordModal .gas-mobile-season-heading { margin-top: .45rem; }
+    #gasRecordModal .gas-mobile-tire-picker {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: .4rem;
+    }
+    #gasRecordModal .gas-mobile-season-choice {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        min-height: 4rem;
+        gap: .3rem;
+        border: 1px solid var(--bs-border-color);
+        border-radius: .7rem;
+        font-size: .8rem;
+        cursor: pointer;
+        text-align: center;
+        padding: .45rem .2rem;
+    }
+    #gasRecordModal .gas-mobile-season-choice i { font-size: 1.45rem; }
+    #gasRecordModal .gas-mobile-tire-picker .btn-check:checked + .gas-mobile-season-choice {
+        color: var(--bs-primary-text-emphasis);
+        background: var(--bs-primary-bg-subtle);
+        border: 2px solid var(--bs-primary);
+    }
+    #gasRecordModal .gas-mobile-tire-picker .btn-check:focus-visible + .gas-mobile-season-choice {
+        outline: 2px solid var(--bs-primary);
+        outline-offset: 2px;
+    }
+    #gasRecordModal .gas-mobile-season-clear { min-height: 44px; padding-left: 0; }
+    #gasRecordModal .gas-mobile-season-clear[aria-pressed="true"] { font-weight: 700; text-decoration: underline; }
+    #gasRecordModal .gas-mobile-full { margin: .1rem 0 .3rem; }
+    #gasRecordModal .gas-mobile-details-toggle {
+        display: flex;
+        min-height: 44px;
+        gap: .6rem;
+        width: 100%;
+        align-items: center;
+        text-align: left;
+    }
+    #gasRecordModal .gas-mobile-details-chevron { margin-left: auto; }
+    #gasRecordModal.gas-mobile-details-open .gas-mobile-details-chevron { transform: rotate(180deg); }
+    #gasRecordModal .gas-mobile-optional,
+    #gasRecordModal .gas-mobile-notes {
+        display: none;
+    }
+    #gasRecordModal.gas-mobile-details-open .gas-mobile-optional,
+    #gasRecordModal.gas-mobile-details-open .gas-mobile-notes {
+        display: block;
+    }
+    #gasRecordModal .gas-mobile-notes {
+        padding: 1rem .85rem;
+        margin-top: .75rem;
+        border-radius: 1rem;
+        background: var(--bs-body-bg);
+    }
+    #gasRecordModal .gas-mobile-notes textarea { min-height: 6rem; }
+    #gasRecordModal.gas-mobile-entry .modal-footer {
+        position: sticky;
+        bottom: 0;
+        z-index: 1055;
+        background: var(--bs-body-bg);
+        border-top: 1px solid var(--bs-border-color);
+    }
+    #gasRecordModal.gas-mobile-entry .modal-footer .btn {
+        min-height: 44px;
+    }
+}
+
+@media (max-width: 359.98px) {
+    #gasRecordModal .gas-mobile-mileage,
+    #gasRecordModal .gas-mobile-liters {
+        grid-column: 1 / -1;
+    }
+    #gasRecordModal .gas-mobile-mileage > label,
+    #gasRecordModal .gas-mobile-liters > label {
+        min-height: 0;
+    }
+}
