@@ -376,6 +376,16 @@ class FuelGradeIntegration(unittest.TestCase):
         self.assertEqual(0, repeated.returncode, repeated.stdout + repeated.stderr)
         self.assertIn("Verified 0 existing records", repeated.stdout)
 
+    def test_electric_mobile_form_keeps_charge_controls(self):
+        electric = self.add_vehicle("UX-ELECTRIC", "Electric")
+        html = self.request(f"/Vehicle/GetAddGasRecordPartialView?vehicleId={electric}")
+        self.assertNotIn('id="gasRecordFuelGrade"', html)
+        self.assertNotIn('class="gas-mobile-field gas-mobile-fuelgrade"', html)
+        self.assertIn('id="gasRecordTireSeason"', html)
+        self.assertIn('class="dual-range-container "', html)
+        self.assertIn('data-handle="min"', html)
+        self.assertIn('data-handle="max"', html)
+
 
 if __name__ == "__main__":
     unittest.main(argv=[sys.argv[0]], verbosity=2)

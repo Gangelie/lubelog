@@ -76,9 +76,9 @@
 <label for="gasRecordGallons">@($"{translator.Translate(userLanguage, "Fuel Consumption")}({consumptionUnit})")</label>
                     <input type="text" inputmode="decimal" onkeydown="interceptDecimalKeys(event)" onkeyup="@(useThreeDecimalsConsumption ? "fixDecimalInput(this, 3)" : "fixDecimalInput(this, 2)")" id="gasRecordGallons" class="form-control" placeholder="@translator.Translate(userLanguage,"Amount of gas refueled")" value="@(isNew ? "" : Model.GasRecord.Gallons)">
 </div>
-                        <div class="gas-mobile-field gas-mobile-fuelgrade">
 @if (!useKwh)
                     {
+                        <div class="gas-mobile-field gas-mobile-fuelgrade">
                         <label for="gasRecordFuelGrade">@translator.Translate(userLanguage, "Fuel Grade (optional)")</label>
                         <select id="gasRecordFuelGrade" class="form-select">
                             <option value="">@translator.Translate(userLanguage, "Unspecified")</option>
@@ -87,8 +87,8 @@
                                 <!option value="@grade" @(string.Equals(Model.GasRecord.FuelGrade, grade, StringComparison.OrdinalIgnoreCase) ? "selected" : "")>@grade</!option>
                             }
                         </select>
+                        </div>
                     }
-</div>
                         <div class="gas-mobile-section-title gas-mobile-season-heading d-md-none">@translator.Translate(userLanguage, "Tire Season")</div>
                         <div class="gas-mobile-field gas-mobile-tire">
 <label for="gasRecordTireSeason">@translator.Translate(userLanguage, "Tire Season (optional)")</label>
