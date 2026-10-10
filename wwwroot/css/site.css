@@ -44,6 +44,41 @@ html {
     height: 65vh;
 }
 
+/* Fuel table rows remain flex containers for saved column ordering. */
+.gas-record-table {
+    min-width: max-content;
+}
+
+.gas-record-table :is(thead, tbody) tr.d-flex {
+    min-width: max-content;
+}
+
+.gas-record-table :is(th, td)[data-column] {
+    flex: 0 0 var(--gas-column-width, calc(14ch + 1rem));
+    width: var(--gas-column-width, calc(14ch + 1rem));
+    min-width: var(--gas-column-width, calc(14ch + 1rem));
+}
+
+.gas-record-table [data-column="daterefueled"] { --gas-column-width: calc(12ch + 1rem); }
+.gas-record-table [data-column="odometer"] { --gas-column-width: calc(11ch + 1rem); }
+.gas-record-table [data-column="delta"] { --gas-column-width: calc(8ch + 1rem); }
+.gas-record-table [data-column="consumption"] { --gas-column-width: calc(13ch + 1rem); }
+.gas-record-table [data-column="startsoc"],
+.gas-record-table [data-column="endsoc"] { --gas-column-width: calc(9ch + 1rem); }
+.gas-record-table [data-column="fueleconomy"] { --gas-column-width: calc(10ch + 1rem); }
+.gas-record-table [data-column="cost"] { --gas-column-width: calc(var(--gas-cost-width) + 1rem); }
+.gas-record-table [data-column="unitcost"] { --gas-column-width: calc(var(--gas-unit-cost-width) + 1rem); }
+.gas-record-table [data-column="fuelgrade"] { --gas-column-width: calc(17ch + 1rem); }
+.gas-record-table [data-column="tireseason"] { --gas-column-width: calc(12ch + 1rem); }
+.gas-record-table [data-column="attachments"] { --gas-column-width: calc(12ch + 1rem); }
+.gas-record-table [data-column="notes"] { --gas-column-width: calc(22ch + 1rem); }
+
+.gas-record-table :is(th, td)[data-column="cost"],
+.gas-record-table :is(th, td)[data-column="unitcost"] {
+    white-space: nowrap;
+    overflow: visible;
+}
+
 .swimlane {
     height: 100%;
 }
@@ -376,6 +411,15 @@ html {
         flex-wrap: wrap;
         white-space: normal;
         word-break: break-all;
+    }
+    .gas-record-table.ll-responsive-table,
+    .gas-record-table.ll-responsive-table tbody tr {
+        min-width: 0;
+    }
+    .gas-record-table.ll-responsive-table tbody td[data-column] {
+        flex: initial;
+        width: initial;
+        min-width: 0;
     }
     .ll-responsive-table tbody td::before {
         content: attr(data-label);

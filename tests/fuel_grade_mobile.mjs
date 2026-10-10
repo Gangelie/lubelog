@@ -119,6 +119,19 @@ try {
     const cells = [...document.querySelectorAll('#gas-tab-pane tbody td[data-column="fuelgrade"], #gas-tab-pane tbody td[data-column="tireseason"]')];
     if (!cells.length || cells.some(cell => !cell.getClientRects().length ||
         cell.getBoundingClientRect().right > innerWidth + 1)) throw new Error('Mobile fuel columns overflow or are hidden');
+    for (const name of ['cost', 'unitcost']) {
+      const moneyCells = [...document.querySelectorAll('#gas-tab-pane tbody td[data-column="' + name + '"]')];
+      if (moneyCells.some(cell => cell.scrollWidth > cell.clientWidth + 1)) {
+        throw new Error('Mobile ' + name + ' value is clipped');
+      }
+    }
+    const table = document.querySelector('#gas-tab-pane .gas-record-table');
+    const container = document.querySelector('#gas-tab-pane .vehicleDetailTabContainer');
+    table.classList.remove('ll-responsive-table');
+    if (container.scrollWidth <= container.clientWidth) {
+      throw new Error('Mobile grid layout cannot scroll horizontally');
+    }
+    table.classList.add('ll-responsive-table');
     getVehicleGasRecords(${JSON.stringify(vehicleId)});
     while (window.jQuery?.active) await new Promise(resolve => setTimeout(resolve, 20));
     for (const name of ['fuelgrade', 'tireseason']) {
@@ -152,6 +165,37 @@ try {
       desktop.tireWidth < 200 || desktop.tireLeft < desktop.modalLeft - 1 ||
       desktop.tireRight > desktop.modalRight + 1) {
     throw new Error(`Desktop layout failed: ${JSON.stringify(desktop)}`);
+  }
+  const columns = await evaluate(`(() => {
+    const table = document.querySelector('#gas-tab-pane .gas-record-table');
+    const widths = {};
+    for (const name of ['daterefueled', 'odometer', 'consumption', 'fueleconomy',
+                        'cost', 'unitcost', 'fuelgrade', 'tireseason']) {
+      const header = table.querySelector('thead [data-column="' + name + '"]');
+      const cells = [...table.querySelectorAll('tbody td[data-column="' + name + '"]')];
+      const longest = cells.reduce((a, b) => a.textContent.length >= b.textContent.length ? a : b);
+      widths[name] = { header: header.getBoundingClientRect().width,
+        cell: longest.getBoundingClientRect().width, scroll: longest.scrollWidth,
+        client: longest.clientWidth, text: longest.textContent.trim() };
+    }
+    return widths;
+  })()`);
+  if (columns.fueleconomy.header >= 145 ||
+      columns.fueleconomy.header >= columns.cost.header ||
+      columns.fueleconomy.header >= columns.unitcost.header ||
+      ['cost', 'unitcost'].some(name => columns[name].scroll > columns[name].client + 1) ||
+      Object.values(columns).some(column => Math.abs(column.header - column.cell) > 1)) {
+    throw new Error(`Fuel table column sizing failed: ${JSON.stringify(columns)}`);
+  }
+  await command('Emulation.setDeviceMetricsOverride', {
+    width: 900, height: 800, deviceScaleFactor: 1, mobile: false
+  });
+  const narrowDesktop = await evaluate(`(() => {
+    const container = document.querySelector('#gas-tab-pane .vehicleDetailTabContainer');
+    return { client: container.clientWidth, scroll: container.scrollWidth };
+  })()`);
+  if (narrowDesktop.scroll <= narrowDesktop.client) {
+    throw new Error(`Narrow desktop did not allow horizontal scrolling: ${JSON.stringify(narrowDesktop)}`);
   }
   console.log(`PASS: mobile dropdown ${Math.round(geometry.selectWidth)}px at 375px; desktop dropdown ${Math.round(desktop.width)}px at 1280px`);
 } finally {

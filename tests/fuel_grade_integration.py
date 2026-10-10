@@ -231,6 +231,11 @@ class FuelGradeIntegration(unittest.TestCase):
         self.add_fuel(gasoline, "2026-07-01", "E10")
         self.assertIn(("E10", True), self.select(gasoline))  # Same date: newer record ID wins.
 
+        expensive = self.request(f"/api/vehicle/gasrecords/add?vehicleId={gasoline}", "POST", {
+            "date": "2026-08-01", "odometer": "3000", "fuelConsumed": "1",
+            "cost": "1234567.89", "isFillToFull": "true", "missedFuelUp": "false"})
+        self.assertTrue(expensive["success"], expensive)
+
         if os.environ.get("FUEL_GRADE_SKIP_BROWSER") != "1" and shutil.which("node") and shutil.which("chromium"):
             browser_test = Path(__file__).with_name("fuel_grade_mobile.mjs")
             screenshot = os.environ.get("FUEL_GRADE_SCREENSHOT")
