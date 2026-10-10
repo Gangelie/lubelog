@@ -102,11 +102,11 @@
     <input type="radio" class="btn-check" id="gasMobileTireSummer" name="gasMobileTireSeason" value="Summer" @(Model.GasRecord.TireSeason == "Summer" ? "checked" : "") onchange="setGasMobileTireSeason(this.value)">
     <label class="gas-mobile-season-choice" for="gasMobileTireSummer"><i class="bi bi-sun-fill" aria-hidden="true"></i><span>@translator.Translate(userLanguage, "Summer")</span></label>
     <input type="radio" class="btn-check" id="gasMobileTireWinter" name="gasMobileTireSeason" value="Winter" @(Model.GasRecord.TireSeason == "Winter" ? "checked" : "") onchange="setGasMobileTireSeason(this.value)">
-    <label class="gas-mobile-season-choice" for="gasMobileTireWinter"><i class="bi bi-snowflake" aria-hidden="true"></i><span>@translator.Translate(userLanguage, "Winter")</span></label>
+    <label class="gas-mobile-season-choice" for="gasMobileTireWinter"><i class="bi bi-snow" aria-hidden="true"></i><span>@translator.Translate(userLanguage, "Winter")</span></label>
     <input type="radio" class="btn-check" id="gasMobileTireAllSeason" name="gasMobileTireSeason" value="AllSeason" @(Model.GasRecord.TireSeason == "AllSeason" ? "checked" : "") onchange="setGasMobileTireSeason(this.value)">
     <label class="gas-mobile-season-choice" for="gasMobileTireAllSeason"><i class="bi bi-cloud-sun" aria-hidden="true"></i><span>@translator.Translate(userLanguage, "All Season")</span></label>
 </div>
-<button type="button" class="btn btn-link btn-sm gas-mobile-season-clear d-md-none" onclick="setGasMobileTireSeason('')">@translator.Translate(userLanguage, "Unspecified")</button>
+<button type="button" class="btn btn-link btn-sm gas-mobile-season-clear d-md-none" aria-pressed="@(Model.GasRecord.TireSeason == null ? "true" : "false")" onclick="setGasMobileTireSeason('')">@translator.Translate(userLanguage, "Unspecified")</button>
 </div>
                         <div class="gas-mobile-field gas-mobile-full">
 <div class="form-check form-switch @(Model.UseKwh ? "d-none" : "")">
@@ -128,12 +128,12 @@
                         </div>
                     </div>
 </div>
-                        <div class="gas-mobile-optional gas-mobile-missed"><div class="form-check form-switch">
+                        <div id="gasMobileMissed" class="gas-mobile-optional gas-mobile-missed"><div class="form-check form-switch">
                         <input class="form-check-input" type="checkbox" role="switch" id="gasIsMissed" checked="@Model.GasRecord.MissedFuelUp">
                         <label class="form-check-label" for="gasIsMissed">@translator.Translate(userLanguage,"Missed Fuel Up(Skip MPG Calculation)")</label>
                     </div></div>
                         <div class="gas-mobile-field gas-mobile-cost">
-<label for="GasRecordCost">@translator.Translate(userLanguage,"Cost")</label>
+<label for="gasRecordCost">@translator.Translate(userLanguage,"Cost")</label>
                     @if (isNew)
                     {
                         <div class="input-group">
@@ -150,10 +150,10 @@
                         <input type="text" inputmode="decimal" onkeydown="interceptDecimalKeys(event)" onkeyup="@(useThreeDecimals ? "fixDecimalInput(this, 3)" : "fixDecimalInput(this, 2)")" id="gasRecordCost" class="form-control" placeholder="@translator.Translate(userLanguage,"Cost of gas refueled")" value="@(isNew ? "" : Model.GasRecord.Cost)">
                     }
 </div>
-                        <button type="button" class="btn btn-outline-secondary gas-mobile-details-toggle d-md-none" data-gas-mobile-details-toggle aria-expanded="false" onclick="toggleGasMobileDetails()">
+                        <button type="button" class="btn btn-outline-secondary gas-mobile-details-toggle d-md-none" data-gas-mobile-details-toggle aria-expanded="false" aria-controls="gasMobileMissed gasMobileExtras gasMobileNotes" onclick="toggleGasMobileDetails()">
                             <i class="bi bi-sliders" aria-hidden="true"></i><span>@translator.Translate(userLanguage, "More Details")</span><i class="bi bi-chevron-down gas-mobile-details-chevron" aria-hidden="true"></i>
                         </button>
-                        <div class="gas-mobile-optional gas-mobile-extra">@await Html.PartialAsync("Supply/_SupplyStore", new SupplyStore { Tab = "GasRecord", AdditionalSupplies = Model.GasRecord.RequisitionHistory.Any() })
+                        <div id="gasMobileExtras" class="gas-mobile-optional gas-mobile-extra">@await Html.PartialAsync("Supply/_SupplyStore", new SupplyStore { Tab = "GasRecord", AdditionalSupplies = Model.GasRecord.RequisitionHistory.Any() })
                     <label for="gasRecordTag">@translator.Translate(userLanguage,"Tags(optional)")</label>
                     <select multiple class="form-select" id="gasRecordTag">
                         @foreach (string tag in Model.GasRecord.Tags)
@@ -165,7 +165,7 @@
                     </div>
                 </div>
                 <div class="col-md-6 col-12">
-                    <div class="gas-mobile-optional gas-mobile-notes">
+                    <div id="gasMobileNotes" class="gas-mobile-optional gas-mobile-notes">
                     <label for="gasRecordNotes">@translator.Translate(userLanguage,"Notes(optional)")<a class="link-underline link-underline-opacity-0" onclick="showLinks(this)"><i class="bi bi-markdown ms-2"></i></a></label>
                     <textarea id="gasRecordNotes" class="form-control" rows="5">@Model.GasRecord.Notes</textarea>
                     <div>

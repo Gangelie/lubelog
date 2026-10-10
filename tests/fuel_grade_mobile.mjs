@@ -87,11 +87,16 @@ try {
       const modal = document.querySelector('#gasRecordModal');
       if (select && modal?.classList.contains('show')) {
         const rect = select.getBoundingClientRect();
-        const tire = document.querySelector('#gasRecordTireSeason').getBoundingClientRect();
+        const tire = document.querySelector('.gas-mobile-tire-picker').getBoundingClientRect();
+        const nativeTire = document.querySelector('#gasRecordTireSeason');
         const content = modal.querySelector('.modal-content').getBoundingClientRect();
+        const footer = modal.querySelector('.modal-footer').getBoundingClientRect();
         return { viewport: innerWidth, selectLeft: rect.left, selectRight: rect.right,
           selectWidth: rect.width, modalLeft: content.left, modalRight: content.right,
           tireLeft: tire.left, tireRight: tire.right, tireWidth: tire.width,
+          nativeTireHidden: getComputedStyle(nativeTire).display === 'none',
+          footerVisible: footer.width > 0 && footer.height > 0,
+          detailsInitiallyHidden: !document.querySelector('.gas-mobile-notes').getClientRects().length,
           label: document.querySelector('label[for="gasRecordFuelGrade"]')?.textContent?.trim() };
       }
       await new Promise(resolve => setTimeout(resolve, 100));
@@ -104,8 +109,184 @@ try {
       geometry.selectRight > geometry.modalRight + 1 ||
       geometry.selectLeft < geometry.modalLeft - 1 || !geometry.label ||
       geometry.tireWidth < 200 || geometry.tireLeft < -1 ||
-      geometry.tireRight > geometry.viewport + 1 || geometry.tireRight > geometry.modalRight + 1) {
+      geometry.tireRight > geometry.viewport + 1 || geometry.tireRight > geometry.modalRight + 1 ||
+      !geometry.nativeTireHidden || !geometry.footerVisible || !geometry.detailsInitiallyHidden) {
     throw new Error(`Mobile layout failed: ${JSON.stringify(geometry)}`);
+  }
+  const mobileForm = await evaluate(`(() => {
+    const modal = document.querySelector('#gasRecordModal');
+    const field = id => document.getElementById(id);
+    const date = field('gasRecordDate').getBoundingClientRect();
+    const mileage = field('gasRecordMileage').getBoundingClientRect();
+    const quantity = field('gasRecordGallons').getBoundingClientRect();
+    const cost = field('gasRecordCost').getBoundingClientRect();
+    const mileageLabel = modal.querySelector('label[for="gasRecordMileage"]');
+    const quantityLabel = modal.querySelector('label[for="gasRecordGallons"]');
+    const details = modal.querySelector('[data-gas-mobile-details-toggle]');
+    const notes = field('gasRecordNotes');
+    field('gasRecordGallons').value = '';
+    const invalid = getAndValidateGasRecordValues();
+    const quantityMarked = field('gasRecordGallons').classList.contains('is-invalid');
+    field('gasRecordDate').value = '2026-09-01';
+    field('gasRecordMileage').value = '54321';
+    field('gasRecordGallons').value = '40';
+    field('gasRecordCost').value = '2.50';
+    field('gasCostType').value = 'unit';
+    field('gasRecordFuelGrade').value = 'E10';
+    document.querySelector('#gasMobileTireWinter').click();
+    const winter = field('gasRecordTireSeason').value;
+    modal.querySelector('.gas-mobile-season-clear').click();
+    const cleared = field('gasRecordTireSeason').value === '' &&
+      modal.querySelector('.gas-mobile-season-clear').getAttribute('aria-pressed') === 'true';
+    document.querySelector('#gasMobileTireWinter').click();
+    details.click();
+    const detailsOpen = details.getAttribute('aria-expanded') === 'true' && notes.getClientRects().length > 0 &&
+      modal.querySelector('.gas-mobile-extra a[onclick="showSuppliesModal()"]').getClientRects().length > 0 &&
+      modal.querySelector('.gas-mobile-notes .lubelogger-uploader').getClientRects().length > 0;
+    const footerWhenExpanded = modal.querySelector('.modal-footer').getBoundingClientRect();
+    notes.value = 'Mobile fuel form check';
+    $('#gasRecordTag').append(new Option('mobile-test', 'mobile-test', true, true)).trigger('change');
+    details.click();
+    const values = getAndValidateGasRecordValues();
+    return { dateWidth: date.width, mileageWidth: mileage.width, quantityWidth: quantity.width,
+      costWidth: cost.width, viewport: innerWidth, dateRight: date.right, costRight: cost.right,
+      mileageLabelOverflow: mileageLabel.scrollWidth > mileageLabel.clientWidth + 1,
+      quantityLabelOverflow: quantityLabel.scrollWidth > quantityLabel.clientWidth + 1,
+      invalid: invalid.hasError, quantityMarked, winter, cleared, detailsOpen,
+      footerWhenExpandedVisible: footerWhenExpanded.top < innerHeight && footerWhenExpanded.bottom > 0,
+      detailsClosed: details.getAttribute('aria-expanded') === 'false',
+      valid: !values.hasError, total: globalParseFloat(values.cost), grade: values.fuelGrade,
+      season: values.tireSeason, notes: values.notes, tags: values.tags };
+  })()`);
+  if (!mobileForm.invalid || !mobileForm.quantityMarked || !mobileForm.valid ||
+      mobileForm.winter !== 'Winter' || !mobileForm.cleared || !mobileForm.detailsOpen ||
+      !mobileForm.footerWhenExpandedVisible ||
+      !mobileForm.detailsClosed || mobileForm.total !== 100 || mobileForm.grade !== 'E10' ||
+      mobileForm.season !== 'Winter' || mobileForm.notes !== 'Mobile fuel form check' ||
+      !mobileForm.tags.includes('mobile-test') || mobileForm.dateWidth < 280 ||
+      mobileForm.mileageWidth < 100 || mobileForm.quantityWidth < 100 ||
+      mobileForm.costWidth < 200 || mobileForm.dateRight > mobileForm.viewport + 1 ||
+      mobileForm.costRight > mobileForm.viewport + 1 ||
+      mobileForm.mileageLabelOverflow || mobileForm.quantityLabelOverflow) {
+    throw new Error(`Mobile fuel form failed: ${JSON.stringify(mobileForm)}`);
+  }
+  const requiredExtra = await evaluate(`(() => {
+    const modal = document.querySelector('#gasRecordModal');
+    const extra = document.createElement('div');
+    extra.className = 'extra-field';
+    extra.innerHTML = '<label>Required browser test</label><input class="extra-field-required" value="">';
+    modal.querySelector('.gas-mobile-extra').appendChild(extra);
+    saveGasRecordToVehicle();
+    const result = { expanded: modal.querySelector('[data-gas-mobile-details-toggle]').getAttribute('aria-expanded'),
+      invalid: extra.querySelector('input').classList.contains('is-invalid'),
+      focused: document.activeElement === extra.querySelector('input') };
+    extra.remove();
+    toggleGasMobileDetails(false);
+    return result;
+  })()`);
+  if (requiredExtra.expanded !== 'true' || !requiredExtra.invalid || !requiredExtra.focused) {
+    throw new Error(`Hidden required field validation failed: ${JSON.stringify(requiredExtra)}`);
+  }
+  await command('Emulation.setDeviceMetricsOverride', {
+    width: 320, height: 700, deviceScaleFactor: 2, mobile: true
+  });
+  const narrowMobile = await evaluate(`(() => {
+    const modal = document.querySelector('#gasRecordModal');
+    const content = modal.querySelector('.modal-content').getBoundingClientRect();
+    const cost = document.querySelector('#gasRecordCost').getBoundingClientRect();
+    const mileage = document.querySelector('#gasRecordMileage').getBoundingClientRect();
+    const quantity = document.querySelector('#gasRecordGallons').getBoundingClientRect();
+    const back = modal.querySelector('.gas-mobile-back').getBoundingClientRect();
+    const save = modal.querySelector('.gas-mobile-header-save').getBoundingClientRect();
+    return { viewport: innerWidth, scrollWidth: document.documentElement.scrollWidth,
+      contentRight: content.right, costRight: cost.right,
+      mileageWidth: mileage.width, quantityWidth: quantity.width,
+      backWidth: back.width, backHeight: back.height, saveWidth: save.width, saveHeight: save.height };
+  })()`);
+  if (narrowMobile.scrollWidth > narrowMobile.viewport + 1 ||
+      narrowMobile.contentRight > narrowMobile.viewport + 1 ||
+      narrowMobile.costRight > narrowMobile.viewport + 1 ||
+      narrowMobile.mileageWidth < 200 || narrowMobile.quantityWidth < 200 ||
+      Math.min(narrowMobile.backWidth, narrowMobile.backHeight,
+               narrowMobile.saveWidth, narrowMobile.saveHeight) < 43) {
+    throw new Error(`Narrow mobile layout failed: ${JSON.stringify(narrowMobile)}`);
+  }
+  await command('Emulation.setDeviceMetricsOverride', {
+    width: 375, height: 812, deviceScaleFactor: 2, mobile: true
+  });
+  const savedId = await evaluate(`(async () => {
+    saveGasRecordToVehicle();
+    for (let i = 0; i < 100; i++) {
+      await new Promise(resolve => setTimeout(resolve, 50));
+      if (window.jQuery?.active) continue;
+      const records = await (await fetch('/api/vehicle/gasrecords?vehicleId=${vehicleId}')).json();
+      const record = records.find(item => item.notes === 'Mobile fuel form check');
+      if (record) {
+        if (record.fuelGrade !== 'E10' || record.tireSeason !== 'Winter' ||
+            Number(record.cost) !== 100 || Number(record.fuelConsumed) !== 40 ||
+            Number(record.odometer) !== 54321 || !record.tags.includes('mobile-test')) {
+          throw new Error('Mobile save lost form values: ' + JSON.stringify(record));
+        }
+        return record.id;
+      }
+    }
+    throw new Error('Mobile fuel record did not save');
+  })()`);
+  const edited = await evaluate(`(async () => {
+    showEditGasRecordModal(${JSON.stringify(savedId)});
+    for (let i = 0; i < 100; i++) {
+      const modal = document.querySelector('#gasRecordModal');
+      if (modal?.classList.contains('show') && document.querySelector('#gasRecordMileage')?.value === '54321') break;
+      await new Promise(resolve => setTimeout(resolve, 50));
+    }
+    const modal = document.querySelector('#gasRecordModal');
+    const original = { grade: document.querySelector('#gasRecordFuelGrade').value,
+      season: document.querySelector('#gasRecordTireSeason').value,
+      radio: document.querySelector('#gasMobileTireWinter').checked,
+      deleteVisible: modal.querySelector('.modal-footer .btn-danger').getClientRects().length > 0 };
+    document.querySelector('#gasRecordMileage').value = '54322';
+    document.querySelector('#gasRecordGallons').value = '50';
+    document.querySelector('#gasRecordCost').value = '125';
+    document.querySelector('#gasRecordFuelGrade').value = 'Super 95';
+    document.querySelector('#gasMobileTireSummer').click();
+    toggleGasMobileDetails(true);
+    document.querySelector('#gasRecordNotes').value = 'Mobile fuel form edited';
+    saveGasRecordToVehicle(true);
+    for (let i = 0; i < 100; i++) {
+      await new Promise(resolve => setTimeout(resolve, 50));
+      if (window.jQuery?.active) continue;
+      const records = await (await fetch('/api/vehicle/gasrecords?vehicleId=${vehicleId}')).json();
+      const record = records.find(item => item.id === ${JSON.stringify(savedId)});
+      if (record?.notes === 'Mobile fuel form edited') {
+        return { ...original, updated: record };
+      }
+    }
+    throw new Error('Mobile fuel record did not update');
+  })()`);
+  if (edited.grade !== 'E10' || edited.season !== 'Winter' || !edited.radio || !edited.deleteVisible ||
+      edited.updated.fuelGrade !== 'Super 95' || edited.updated.tireSeason !== 'Summer' ||
+      Number(edited.updated.cost) !== 125 || Number(edited.updated.fuelConsumed) !== 50 ||
+      Number(edited.updated.odometer) !== 54322 || !edited.updated.tags.includes('mobile-test')) {
+    throw new Error(`Mobile fuel edit failed: ${JSON.stringify(edited)}`);
+  }
+  const bulkEdit = await evaluate(`(async () => {
+    const records = await (await fetch('/api/vehicle/gasrecords?vehicleId=${vehicleId}')).json();
+    const otherId = records.find(record => record.id !== ${JSON.stringify(savedId)})?.id;
+    if (!otherId) throw new Error('Bulk edit needs another fuel record');
+    editMultipleGasRecords([${JSON.stringify(savedId)}, otherId]);
+    for (let i = 0; i < 100; i++) {
+      const modal = document.querySelector('#gasRecordModal');
+      if (modal?.classList.contains('show') && modal.querySelector('.modal-title')?.textContent.includes('Edit Multiple')) {
+        return { singleRecordLayout: modal.classList.contains('gas-mobile-entry'),
+          footerVisible: modal.querySelector('.modal-footer').getClientRects().length > 0,
+          saveVisible: modal.querySelector('.modal-footer .btn-primary').getClientRects().length > 0 };
+      }
+      await new Promise(resolve => setTimeout(resolve, 50));
+    }
+    throw new Error('Bulk edit modal did not open');
+  })()`);
+  if (bulkEdit.singleRecordLayout || !bulkEdit.footerVisible || !bulkEdit.saveVisible) {
+    throw new Error(`Bulk edit controls were hidden: ${JSON.stringify(bulkEdit)}`);
   }
   await evaluate(`(async () => {
     hideAddGasRecordModal();
@@ -145,7 +326,18 @@ try {
       await new Promise(resolve => setTimeout(resolve, 20));
     }
   })()`);
+  const reopened = await evaluate(`(() => {
+    const modal = document.querySelector('#gasRecordModal');
+    const body = modal.querySelector('.modal-body');
+    return { modalScroll: modal.scrollTop, bodyScroll: body.scrollTop, windowScroll: scrollY,
+      dateTop: document.querySelector('#gasRecordDate').getBoundingClientRect().top,
+      headerBottom: modal.querySelector('.modal-header').getBoundingClientRect().bottom };
+  })()`);
+  if (reopened.dateTop < reopened.headerBottom || reopened.dateTop > 600) {
+    throw new Error(`Reopened fuel form did not start at the top: ${JSON.stringify(reopened)}`);
+  }
   if (screenshot) {
+    await new Promise(resolve => setTimeout(resolve, 3000));
     const result = await command('Page.captureScreenshot', { format: 'png', captureBeyondViewport: false });
     fs.writeFileSync(screenshot, Buffer.from(result.data, 'base64'));
   }
@@ -158,12 +350,17 @@ try {
     const modal = document.querySelector('#gasRecordModal .modal-content').getBoundingClientRect();
     return { width: rect.width, left: rect.left, right: rect.right,
       tireWidth: tire.width, tireLeft: tire.left, tireRight: tire.right,
-      modalLeft: modal.left, modalRight: modal.right, viewport: innerWidth };
+      modalLeft: modal.left, modalRight: modal.right, modalWidth: modal.width,
+      notesVisible: document.querySelector('#gasRecordNotes').getClientRects().length > 0,
+      footerVisible: document.querySelector('#gasRecordModal .modal-footer').getClientRects().length > 0,
+      mobileSaveHidden: !document.querySelector('.gas-mobile-header-save').getClientRects().length,
+      viewport: innerWidth };
   })()`);
   if (desktop.width < 200 || desktop.left < desktop.modalLeft - 1 ||
       desktop.right > desktop.modalRight + 1 || desktop.right > desktop.viewport + 1 ||
       desktop.tireWidth < 200 || desktop.tireLeft < desktop.modalLeft - 1 ||
-      desktop.tireRight > desktop.modalRight + 1) {
+      desktop.tireRight > desktop.modalRight + 1 || desktop.modalWidth > 900 ||
+      !desktop.notesVisible || !desktop.footerVisible || !desktop.mobileSaveHidden) {
     throw new Error(`Desktop layout failed: ${JSON.stringify(desktop)}`);
   }
   const columns = await evaluate(`(() => {

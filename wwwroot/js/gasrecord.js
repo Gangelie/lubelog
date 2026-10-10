@@ -2,6 +2,7 @@
     $.get(`/Vehicle/GetAddGasRecordPartialView?vehicleId=${GetVehicleId().vehicleId}`, function (data) {
         if (data) {
             $("#gasRecordModalContent").html(data);
+            prepareGasRecordModal(true);
             //initiate datepicker
             initDatePicker($('#gasRecordDate'));
             initTagSelector($("#gasRecordTag"));
@@ -25,6 +26,7 @@ function showEditGasRecordModal(gasRecordId, nocache) {
     $.get(`/Vehicle/GetGasRecordForEditById?gasRecordId=${gasRecordId}`, function (data) {
         if (data) {
             $("#gasRecordModalContent").html(data);
+            prepareGasRecordModal(true);
             //initiate datepicker
             initDatePicker($('#gasRecordDate'));
             initTagSelector($("#gasRecordTag"));
@@ -66,8 +68,13 @@ function saveGasRecordToVehicle(isEdit) {
     var formValues = getAndValidateGasRecordValues();
     //validate
     if (formValues.hasError) {
-        if (window.matchMedia('(max-width: 767.98px)').matches && $('#gasRecordModal .gas-mobile-optional .is-invalid').length) {
-            toggleGasMobileDetails(true);
+        if (window.matchMedia('(max-width: 767.98px)').matches) {
+            if ($('#gasRecordModal .gas-mobile-optional .is-invalid').length) {
+                toggleGasMobileDetails(true);
+            }
+            const invalidField = document.querySelector('#gasRecordModal .is-invalid');
+            invalidField?.focus({ preventScroll: true });
+            invalidField?.scrollIntoView({ block: 'center', behavior: 'smooth' });
         }
         errorToast("Please check the form data");
         return;
@@ -449,6 +456,7 @@ function editMultipleGasRecords(ids) {
     $.post('/Vehicle/GetGasRecordsEditModal', { recordIds: ids }, function (data) {
         if (data) {
             $("#gasRecordModalContent").html(data);
+            prepareGasRecordModal(false);
             //initiate datepicker
             initDatePicker($('#gasRecordDate'));
             initTagSelector($("#gasRecordTag"));
@@ -521,6 +529,13 @@ function setGasMobileTireSeason(value) {
     document.querySelectorAll('#gasRecordModal input[name="gasMobileTireSeason"]').forEach(input => {
         input.checked = input.value === value;
     });
+    document.querySelector('#gasRecordModal .gas-mobile-season-clear')?.setAttribute('aria-pressed', String(value === ''));
+}
+function prepareGasRecordModal(singleRecord) {
+    const modal = document.getElementById('gasRecordModal');
+    if (!modal) return;
+    modal.classList.toggle('gas-mobile-entry', singleRecord);
+    modal.classList.remove('gas-mobile-details-open');
 }
 function toggleGasMobileDetails(forceOpen) {
     const modal = document.getElementById('gasRecordModal');
