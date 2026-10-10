@@ -15,6 +15,7 @@
         /// </summary>
         public decimal Gallons { get; set; }
         public decimal Cost { get; set; }
+        public string? FuelGrade { get; set; }
         public int DeltaMileage { get; set; }
         public decimal MilesPerGallon { get; set; }
         public decimal CostPerGallon { get; set; }

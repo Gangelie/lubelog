@@ -66,6 +66,17 @@
                     </div>
                     <label for="gasRecordGallons">@($"{translator.Translate(userLanguage, "Fuel Consumption")}({consumptionUnit})")</label>
                     <input type="text" inputmode="decimal" onkeydown="interceptDecimalKeys(event)" onkeyup="@(useThreeDecimalsConsumption ? "fixDecimalInput(this, 3)" : "fixDecimalInput(this, 2)")" id="gasRecordGallons" class="form-control" placeholder="@translator.Translate(userLanguage,"Amount of gas refueled")" value="@(isNew ? "" : Model.GasRecord.Gallons)">
+                    @if (!useKwh)
+                    {
+                        <label for="gasRecordFuelGrade">@translator.Translate(userLanguage, "Fuel Grade (optional)")</label>
+                        <select id="gasRecordFuelGrade" class="form-select">
+                            <option value="">@translator.Translate(userLanguage, "Unspecified")</option>
+                            @foreach (string grade in Model.FuelGrades)
+                            {
+                                <!option value="@grade" @(string.Equals(Model.GasRecord.FuelGrade, grade, StringComparison.OrdinalIgnoreCase) ? "selected" : "")>@grade</!option>
+                            }
+                        </select>
+                    }
                     <div class="form-check form-switch @(Model.UseKwh ? "d-none" : "")">
                         <input class="form-check-input" type="checkbox" role="switch" id="gasIsFillToFull" checked="@Model.GasRecord.IsFillToFull">
                         <label class="form-check-label" for="gasIsFillToFull">@translator.Translate(userLanguage,"Is Filled To Full")</label>

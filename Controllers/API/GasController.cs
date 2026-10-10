@@ -48,6 +48,7 @@ namespace CarCareTracker.Controllers
                     Odometer = x.Mileage.ToString(),
                     Cost = x.Cost.ToString(),
                     FuelConsumed = x.Gallons.ToString(),
+                    FuelGrade = x.FuelGrade,
                     FuelEconomy = x.MilesPerGallon.ToString(),
                     IsFillToFull = x.IsFillToFull.ToString(),
                     MissedFuelUp = x.MissedFuelUp.ToString(),
@@ -107,6 +108,7 @@ namespace CarCareTracker.Controllers
                     Odometer = x.Mileage.ToString(),
                     Cost = x.Cost.ToString(),
                     FuelConsumed = x.Gallons.ToString(),
+                    FuelGrade = x.FuelGrade,
                     FuelEconomy = x.MilesPerGallon.ToString(),
                     IsFillToFull = x.IsFillToFull.ToString(),
                     MissedFuelUp = x.MissedFuelUp.ToString(),
@@ -177,6 +179,7 @@ namespace CarCareTracker.Controllers
                     EndingSoc = string.IsNullOrWhiteSpace(input.EndingSoc) ? 80 : int.Parse(input.EndingSoc),
                     Notes = string.IsNullOrWhiteSpace(input.Notes) ? "" : input.Notes,
                     Cost = decimal.Parse(input.Cost),
+                    FuelGrade = FuelGradeHelper.Normalize(input.FuelGrade),
                     ExtraFields = input.ExtraFields,
                     Files = input.Files,
                     Tags = string.IsNullOrWhiteSpace(input.Tags) ? new List<string>() : input.Tags.Split(' ').Distinct().ToList()
@@ -277,6 +280,10 @@ namespace CarCareTracker.Controllers
                     existingRecord.EndingSoc = string.IsNullOrWhiteSpace(input.EndingSoc) ? 80 : int.Parse(input.EndingSoc);
                     existingRecord.Notes = string.IsNullOrWhiteSpace(input.Notes) ? "" : input.Notes;
                     existingRecord.Cost = decimal.Parse(input.Cost);
+                    if (input.FuelGrade != null)
+                    {
+                        existingRecord.FuelGrade = FuelGradeHelper.Normalize(input.FuelGrade);
+                    }
                     existingRecord.ExtraFields = input.ExtraFields;
                     existingRecord.Files = input.Files;
                     existingRecord.Tags = string.IsNullOrWhiteSpace(input.Tags) ? new List<string>() : input.Tags.Split(' ').Distinct().ToList();

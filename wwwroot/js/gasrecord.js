@@ -85,6 +85,7 @@ function getAndValidateGasRecordValues() {
     let gasDate = $("#gasRecordDate").val();
     let gasMileage = parseInt(globalParseFloat($("#gasRecordMileage").val())).toString();
     let gasGallons = $("#gasRecordGallons").val();
+    let fuelGrade = $("#gasRecordFuelGrade").val();
     let gasCost = $("#gasRecordCost").val();
     let gasCostType = $("#gasCostType").val();
     let gasIsFillToFull = $("#gasIsFillToFull").is(":checked");
@@ -148,6 +149,7 @@ function getAndValidateGasRecordValues() {
         date: gasDate,
         mileage: gasMileage,
         gallons: gasGallons,
+        fuelGrade: fuelGrade,
         cost: gasCost,
         files: uploadedFiles,
         supplies: selectedSupplies,

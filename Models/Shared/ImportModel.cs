@@ -21,6 +21,7 @@ namespace CarCareTracker.Models
         public string Description { get; set; } = string.Empty;
         public string Notes { get; set; } = string.Empty;
         public string FuelConsumed { get; set; } = string.Empty;
+        public string FuelGrade { get; set; } = string.Empty;
         public string Cost { get; set; } = string.Empty;
         public string Price { get; set; } = string.Empty;
         public string PartialFuelUp { get; set; } = string.Empty;
@@ -120,6 +121,7 @@ namespace CarCareTracker.Models
         public string Odometer { get; set; } = string.Empty;
         [JsonConverter(typeof(FromDecimalOptional))]
         public string FuelConsumed { get; set; } = string.Empty;
+        public string? FuelGrade { get; set; }
         [JsonConverter(typeof(FromDecimalOptional))]
         public string Cost { get; set; } = string.Empty;
         [JsonConverter(typeof(FromDecimalOptional))]
