@@ -143,6 +143,11 @@ namespace CarCareTracker.Controllers
                     {
                         return Json(OperationResponse.Failed("Access Denied"));
                     }
+                    // Older clients do not post Notes. Keep the stored value unless the field was sent.
+                    if (!Request.HasFormContentType || !Request.Form.ContainsKey("notes"))
+                    {
+                        vehicleInput.Notes = _dataAccess.GetVehicleById(vehicleInput.Id)?.Notes;
+                    }
                 }
                 //move image from temp folder to images folder.
                 vehicleInput.ImageLocation = _fileHelper.MoveFileFromTemp(vehicleInput.ImageLocation, "images/");

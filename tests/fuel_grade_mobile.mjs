@@ -394,6 +394,79 @@ try {
   if (narrowDesktop.scroll <= narrowDesktop.client) {
     throw new Error(`Narrow desktop did not allow horizontal scrolling: ${JSON.stringify(narrowDesktop)}`);
   }
+  await command('Emulation.setDeviceMetricsOverride', {
+    width: 375, height: 812, deviceScaleFactor: 2, mobile: true
+  });
+  await evaluate(`(async () => {
+    bootstrap.Modal.getOrCreateInstance(document.querySelector('#gasRecordModal')).hide();
+    editVehicle(${JSON.stringify(vehicleId)});
+    for (let i = 0; i < 100; i++) {
+      if (document.querySelector('#editVehicleModal.show #inputVehicleNotes')) return;
+      await new Promise(resolve => setTimeout(resolve, 20));
+    }
+    throw new Error('Vehicle editor did not open');
+  })()`);
+  const mobileNotes = await evaluate(`(() => {
+    const field = document.querySelector('#editVehicleModal #inputVehicleNotes');
+    const rect = field.getBoundingClientRect();
+    const modal = document.querySelector('#editVehicleModal .modal-content').getBoundingClientRect();
+    return { left: rect.left, right: rect.right, width: rect.width,
+      modalLeft: modal.left, modalRight: modal.right,
+      label: document.querySelector('#editVehicleModal label[for="inputVehicleNotes"]')?.textContent.trim(),
+      rows: field.rows, visible: !!field.getClientRects().length };
+  })()`);
+  if (!mobileNotes.visible || mobileNotes.rows < 3 ||
+      mobileNotes.left < mobileNotes.modalLeft - 1 || mobileNotes.right > mobileNotes.modalRight + 1 ||
+      mobileNotes.right > 376 || mobileNotes.width < 250 ||
+      mobileNotes.label !== 'Vehicle Notes (optional)') {
+    throw new Error(`Mobile vehicle notes layout failed: ${JSON.stringify(mobileNotes)}`);
+  }
+  await command('Emulation.setDeviceMetricsOverride', {
+    width: 1280, height: 800, deviceScaleFactor: 1, mobile: false
+  });
+  const desktopNotes = await evaluate(`(() => {
+    const field = document.querySelector('#editVehicleModal #inputVehicleNotes');
+    const rect = field.getBoundingClientRect();
+    const modal = document.querySelector('#editVehicleModal .modal-content').getBoundingClientRect();
+    return { left: rect.left, right: rect.right, width: rect.width,
+      modalLeft: modal.left, modalRight: modal.right };
+  })()`);
+  if (desktopNotes.left < desktopNotes.modalLeft - 1 ||
+      desktopNotes.right > desktopNotes.modalRight + 1 || desktopNotes.width < 500) {
+    throw new Error(`Desktop vehicle notes layout failed: ${JSON.stringify(desktopNotes)}`);
+  }
+  await command('Emulation.setDeviceMetricsOverride', {
+    width: 375, height: 812, deviceScaleFactor: 2, mobile: true
+  });
+  await command('Page.navigate', { url: `${base}/Home` });
+  const addedNotes = await evaluate(`(async () => {
+    for (let i = 0; i < 100 && typeof showAddVehicleModal !== 'function'; i++) {
+      await new Promise(resolve => setTimeout(resolve, 50));
+    }
+    if (typeof showAddVehicleModal !== 'function') throw new Error('Garage did not load');
+    showAddVehicleModal();
+    for (let i = 0; i < 100 && !document.querySelector('#addVehicleModal.show #inputVehicleNotes'); i++) {
+      await new Promise(resolve => setTimeout(resolve, 20));
+    }
+    const field = document.querySelector('#addVehicleModal #inputVehicleNotes');
+    if (!field) throw new Error('Add Vehicle notes field is missing');
+    const rect = field.getBoundingClientRect();
+    if (rect.width < 250 || rect.right > innerWidth + 1) throw new Error('Add Vehicle notes overflow on mobile');
+    document.querySelector('#inputYear').value = '2005';
+    document.querySelector('#inputMake').value = 'Volkswagen';
+    document.querySelector('#inputModel').value = 'Passat';
+    document.querySelector('#inputLicensePlate').value = 'VN-BROWSER';
+    field.value = 'Motor: 2.5 TDI V6\\nEngine code: BAU\\nÖl & <test>';
+    saveVehicle(false);
+    for (let i = 0; i < 100 && window.jQuery?.active; i++) {
+      await new Promise(resolve => setTimeout(resolve, 20));
+    }
+    const vehicles = await (await fetch('/api/vehicles')).json();
+    return vehicles.find(vehicle => vehicle.licensePlate === 'VN-BROWSER')?.notes;
+  })()`);
+  if (addedNotes !== 'Motor: 2.5 TDI V6\nEngine code: BAU\nÖl & <test>') {
+    throw new Error(`Browser Add Vehicle did not persist notes: ${JSON.stringify(addedNotes)}`);
+  }
   console.log(`PASS: mobile dropdown ${Math.round(geometry.selectWidth)}px at 375px; desktop dropdown ${Math.round(desktop.width)}px at 1280px`);
 } finally {
   socket?.close();

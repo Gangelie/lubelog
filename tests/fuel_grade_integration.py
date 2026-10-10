@@ -37,6 +37,27 @@ class GradeSelect(HTMLParser):
             self.in_select = False
 
 
+class VehicleNotesTextarea(HTMLParser):
+    def __init__(self):
+        super().__init__()
+        self.in_notes = False
+        self.found = False
+        self.value = ""
+
+    def handle_starttag(self, tag, attrs):
+        if tag == "textarea" and dict(attrs).get("id") == "inputVehicleNotes":
+            self.in_notes = True
+            self.found = True
+
+    def handle_data(self, data):
+        if self.in_notes:
+            self.value += data
+
+    def handle_endtag(self, tag):
+        if tag == "textarea":
+            self.in_notes = False
+
+
 class FuelGradeIntegration(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
@@ -151,6 +172,56 @@ class FuelGradeIntegration(unittest.TestCase):
         parser = GradeSelect("gasRecordTireSeason")
         parser.feed(self.request(path))
         return parser.options
+
+    def test_vehicle_profile_notes_add_edit_and_legacy(self):
+        notes = "Motor: 2.5 TDI V6\nEngine code: BAU\nTransmission: Automatic\nDrivetrain: 4Motion 🚙 <test> & Öl"
+        add_form = self.request("/Vehicle/AddVehiclePartialView")
+        self.assertIn("Vehicle Notes (optional)", add_form)
+        empty = VehicleNotesTextarea()
+        empty.feed(add_form)
+        self.assertTrue(empty.found)
+        self.assertEqual("", empty.value)
+
+        fields = {"year": "2005", "make": "Volkswagen", "model": "Passat",
+                  "licensePlate": "VN-TEST", "notes": notes}
+        self.assertTrue(self.request("/Vehicle/SaveVehicle", "POST", fields, form=True)["success"])
+        vehicle = next(v for v in self.request("/api/vehicles") if v["licensePlate"] == "VN-TEST")
+        vehicle_id = vehicle["id"]
+        self.assertEqual(notes, vehicle["notes"])
+        self.assertFalse(vehicle["isDiesel"])
+        self.assertFalse(vehicle["hasOdometerAdjustment"])
+
+        editor = self.request(f"/Vehicle/GetEditVehiclePartialViewById?vehicleId={vehicle_id}")
+        self.assertIn("&lt;test&gt;", editor)
+        loaded = VehicleNotesTextarea()
+        loaded.feed(editor)
+        self.assertEqual(notes, loaded.value)
+
+        fuel_id = self.add_fuel(vehicle_id, "2026-01-01", "Super 95", "Winter")
+        before = self.records(vehicle_id)
+        changed = "Erste Zeile\nZweite Zeile: äöü & <b>"
+        fields.update({"id": vehicle_id, "notes": changed})
+        self.assertTrue(self.request("/Vehicle/SaveVehicle", "POST", fields, form=True)["success"])
+        self.assertEqual(changed, next(v for v in self.request("/api/vehicles") if v["id"] == vehicle_id)["notes"])
+        self.assertEqual(before, self.records(vehicle_id))
+        self.assertEqual(fuel_id, int(before[0]["id"]))
+        loaded = VehicleNotesTextarea()
+        loaded.feed(self.request(f"/Vehicle/GetEditVehiclePartialViewById?vehicleId={vehicle_id}"))
+        self.assertEqual(changed, loaded.value)
+
+        old_form = {key: value for key, value in fields.items() if key != "notes"}
+        self.assertTrue(self.request("/Vehicle/SaveVehicle", "POST", old_form, form=True)["success"])
+        self.assertEqual(changed, next(v for v in self.request("/api/vehicles") if v["id"] == vehicle_id)["notes"])
+        fields["notes"] = ""
+        self.assertTrue(self.request("/Vehicle/SaveVehicle", "POST", fields, form=True)["success"])
+        self.assertFalse(next(v for v in self.request("/api/vehicles") if v["id"] == vehicle_id)["notes"])
+
+        legacy_id = self.add_vehicle("VN-LEGACY")
+        legacy = next(v for v in self.request("/api/vehicles") if v["id"] == legacy_id)
+        self.assertIsNone(legacy["notes"])
+        legacy_form = VehicleNotesTextarea()
+        legacy_form.feed(self.request(f"/Vehicle/GetEditVehiclePartialViewById?vehicleId={legacy_id}"))
+        self.assertEqual("", legacy_form.value)
 
     def test_grade_across_ui_api_and_csv(self):
         gasoline = self.add_vehicle("FG-GAS")

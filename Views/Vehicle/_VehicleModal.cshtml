@@ -140,6 +140,10 @@
                     <input onChange="uploadThumbnail(this)" type="file" accept=".png,.jpg,.jpeg" class="form-control-file" id="inputImage">
                     <input style="display:none;" onChange="uploadMap(this)" type="file" accept=".json" class="form-control-file" id="inputMap">
                 </div>
+                <div class="col-12 mt-2">
+                    <label for="inputVehicleNotes">@translator.Translate(userLanguage, "Vehicle Notes (optional)")</label>
+                    <textarea id="inputVehicleNotes" class="form-control" rows="4">@Model.Notes</textarea>
+                </div>
             </div>
         </div>
     </form>
