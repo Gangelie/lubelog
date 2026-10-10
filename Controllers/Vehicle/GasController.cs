@@ -40,6 +40,10 @@ namespace CarCareTracker.Controllers
             {
                 return Json(OperationResponse.Failed("Access Denied"));
             }
+            if (!TireSeasonHelper.TryNormalize(gasRecord.TireSeason, out var tireSeason))
+            {
+                return Json(OperationResponse.Failed("Invalid TireSeason"));
+            }
             gasRecord.Files = gasRecord.Files.Select(x => { return new UploadedFiles { Name = x.Name, Location = _fileHelper.MoveFileFromTemp(x.Location, "documents/") }; }).ToList();
             if (gasRecord.Supplies.Any())
             {
@@ -54,6 +58,23 @@ namespace CarCareTracker.Controllers
                 _vehicleLogic.RestoreSupplyRecordsByUsage(gasRecord.DeletedRequisitionHistory, $"Fuel Record {gasRecord.Date}");
             }
             var convertedRecord = gasRecord.ToGasRecord();
+            convertedRecord.FuelGrade = FuelGradeHelper.Normalize(convertedRecord.FuelGrade);
+            convertedRecord.TireSeason = tireSeason;
+            if (gasRecord.Id != default && (gasRecord.FuelGrade == null || gasRecord.TireSeason == null))
+            {
+                var existingRecord = _gasRecordDataAccess.GetGasRecordById(gasRecord.Id);
+                if (existingRecord?.VehicleId == gasRecord.VehicleId)
+                {
+                    if (gasRecord.FuelGrade == null)
+                    {
+                        convertedRecord.FuelGrade = existingRecord.FuelGrade;
+                    }
+                    if (gasRecord.TireSeason == null)
+                    {
+                        convertedRecord.TireSeason = existingRecord.TireSeason;
+                    }
+                }
+            }
             var result = _gasRecordDataAccess.SaveGasRecordToVehicle(convertedRecord);
             if (result)
             {
@@ -79,7 +100,14 @@ namespace CarCareTracker.Controllers
             var vehicleData = _dataAccess.GetVehicleById(vehicleId);
             var vehicleIsElectric = vehicleData.IsElectric;
             var vehicleUseHours = vehicleData.UseHours;
-            return PartialView("Gas/_GasModal", new GasRecordInputContainer() { UseKwh = vehicleIsElectric, UseHours = vehicleUseHours, GasRecord = new GasRecordInput() { ExtraFields = _extraFieldDataAccess.GetExtraFieldsById((int)ImportMode.GasRecord).ExtraFields } });
+            var lastGrade = vehicleIsElectric ? null : FuelGradeHelper.GetLastUsed(_gasRecordDataAccess.GetGasRecordsByVehicleId(vehicleId));
+            var lastTireSeason = TireSeasonHelper.GetLastUsed(_gasRecordDataAccess.GetGasRecordsByVehicleId(vehicleId));
+            var grades = vehicleIsElectric ? new List<string>() : FuelGradeHelper.GetOptions(_configuration, vehicleData.IsDiesel);
+            if (lastGrade != null && !grades.Contains(lastGrade, StringComparer.OrdinalIgnoreCase))
+            {
+                grades.Add(lastGrade);
+            }
+            return PartialView("Gas/_GasModal", new GasRecordInputContainer() { UseKwh = vehicleIsElectric, UseHours = vehicleUseHours, FuelGrades = grades, GasRecord = new GasRecordInput() { FuelGrade = lastGrade, TireSeason = lastTireSeason, ExtraFields = _extraFieldDataAccess.GetExtraFieldsById((int)ImportMode.GasRecord).ExtraFields } });
         }
         [HttpGet]
         public IActionResult GetGasRecordForEditById(int gasRecordId)
@@ -96,6 +124,8 @@ namespace CarCareTracker.Controllers
                 Mileage = result.Mileage,
                 VehicleId = result.VehicleId,
                 Cost = result.Cost,
+                FuelGrade = result.FuelGrade,
+                TireSeason = result.TireSeason,
                 Date = result.Date.ToShortDateString(),
                 Files = result.Files,
                 Gallons = result.Gallons,
@@ -117,6 +147,14 @@ namespace CarCareTracker.Controllers
                 UseHours = vehicleUseHours,
                 GasRecord = convertedResult
             };
+            if (!vehicleIsElectric)
+            {
+                viewModel.FuelGrades = FuelGradeHelper.GetOptions(_configuration, vehicleData.IsDiesel);
+                if (convertedResult.FuelGrade != null && !viewModel.FuelGrades.Contains(convertedResult.FuelGrade, StringComparer.OrdinalIgnoreCase))
+                {
+                    viewModel.FuelGrades.Add(convertedResult.FuelGrade);
+                }
+            }
             return PartialView("Gas/_GasModal", viewModel);
         }
         private OperationResponse DeleteGasRecordWithChecks(int gasRecordId)

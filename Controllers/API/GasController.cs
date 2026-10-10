@@ -48,6 +48,8 @@ namespace CarCareTracker.Controllers
                     Odometer = x.Mileage.ToString(),
                     Cost = x.Cost.ToString(),
                     FuelConsumed = x.Gallons.ToString(),
+                    FuelGrade = x.FuelGrade,
+                    TireSeason = x.TireSeason,
                     FuelEconomy = x.MilesPerGallon.ToString(),
                     IsFillToFull = x.IsFillToFull.ToString(),
                     MissedFuelUp = x.MissedFuelUp.ToString(),
@@ -107,6 +109,8 @@ namespace CarCareTracker.Controllers
                     Odometer = x.Mileage.ToString(),
                     Cost = x.Cost.ToString(),
                     FuelConsumed = x.Gallons.ToString(),
+                    FuelGrade = x.FuelGrade,
+                    TireSeason = x.TireSeason,
                     FuelEconomy = x.MilesPerGallon.ToString(),
                     IsFillToFull = x.IsFillToFull.ToString(),
                     MissedFuelUp = x.MissedFuelUp.ToString(),
@@ -165,6 +169,11 @@ namespace CarCareTracker.Controllers
             }
             try
             {
+                if (!TireSeasonHelper.TryNormalize(input.TireSeason, out var tireSeason))
+                {
+                    Response.StatusCode = 400;
+                    return Json(OperationResponse.Failed("Invalid TireSeason"));
+                }
                 var gasRecord = new GasRecord()
                 {
                     VehicleId = vehicleId,
@@ -177,6 +186,8 @@ namespace CarCareTracker.Controllers
                     EndingSoc = string.IsNullOrWhiteSpace(input.EndingSoc) ? 80 : int.Parse(input.EndingSoc),
                     Notes = string.IsNullOrWhiteSpace(input.Notes) ? "" : input.Notes,
                     Cost = decimal.Parse(input.Cost),
+                    FuelGrade = FuelGradeHelper.Normalize(input.FuelGrade),
+                    TireSeason = tireSeason,
                     ExtraFields = input.ExtraFields,
                     Files = input.Files,
                     Tags = string.IsNullOrWhiteSpace(input.Tags) ? new List<string>() : input.Tags.Split(' ').Distinct().ToList()
@@ -258,6 +269,11 @@ namespace CarCareTracker.Controllers
             }
             try
             {
+                if (input.TireSeasonSpecified && !TireSeasonHelper.TryNormalize(input.TireSeason, out _))
+                {
+                    Response.StatusCode = 400;
+                    return Json(OperationResponse.Failed("Invalid TireSeason"));
+                }
                 //retrieve existing record
                 var existingRecord = _gasRecordDataAccess.GetGasRecordById(int.Parse(input.Id));
                 if (existingRecord != null && existingRecord.Id == int.Parse(input.Id))
@@ -277,6 +293,15 @@ namespace CarCareTracker.Controllers
                     existingRecord.EndingSoc = string.IsNullOrWhiteSpace(input.EndingSoc) ? 80 : int.Parse(input.EndingSoc);
                     existingRecord.Notes = string.IsNullOrWhiteSpace(input.Notes) ? "" : input.Notes;
                     existingRecord.Cost = decimal.Parse(input.Cost);
+                    if (input.FuelGrade != null)
+                    {
+                        existingRecord.FuelGrade = FuelGradeHelper.Normalize(input.FuelGrade);
+                    }
+                    if (input.TireSeasonSpecified)
+                    {
+                        TireSeasonHelper.TryNormalize(input.TireSeason, out var tireSeason);
+                        existingRecord.TireSeason = tireSeason;
+                    }
                     existingRecord.ExtraFields = input.ExtraFields;
                     existingRecord.Files = input.Files;
                     existingRecord.Tags = string.IsNullOrWhiteSpace(input.Tags) ? new List<string>() : input.Tags.Split(' ').Distinct().ToList();
@@ -295,6 +320,37 @@ namespace CarCareTracker.Controllers
                 Response.StatusCode = 500;
                 return Json(OperationResponse.Failed(ex.Message));
             }
+        }
+        [TypeFilter(typeof(APIKeyFilter), Arguments = new object[] { HouseholdPermission.Edit })]
+        [HttpPatch]
+        [Route("/api/vehicle/gasrecords/tireseason")]
+        [Consumes("application/json")]
+        public IActionResult UpdateGasRecordTireSeason([FromBody] GasRecordExportModel input)
+        {
+            if (!int.TryParse(input.Id, out var id) || id <= 0 || !input.TireSeasonSpecified ||
+                !TireSeasonHelper.TryNormalize(input.TireSeason, out var tireSeason))
+            {
+                Response.StatusCode = 400;
+                return Json(OperationResponse.Failed("Invalid record id or TireSeason"));
+            }
+            var existingRecord = _gasRecordDataAccess.GetGasRecordById(id);
+            if (existingRecord == null || existingRecord.Id != id)
+            {
+                Response.StatusCode = 400;
+                return Json(OperationResponse.Failed("Invalid Record Id"));
+            }
+            if (!_userLogic.UserCanEditVehicle(GetUserID(), existingRecord.VehicleId, HouseholdPermission.Edit))
+            {
+                Response.StatusCode = 403;
+                return Json(OperationResponse.Failed("Access Denied"));
+            }
+            existingRecord.TireSeason = tireSeason;
+            var result = _gasRecordDataAccess.SaveGasRecordToVehicle(existingRecord);
+            if (result)
+            {
+                _eventLogic.PublishEvent(GetUserID(), WebHookPayload.FromGasRecord(existingRecord, "gasrecord.update.api", User.Identity?.Name ?? string.Empty));
+            }
+            return Json(OperationResponse.Conditional(result, "Gas Record Updated"));
         }
     }
 }

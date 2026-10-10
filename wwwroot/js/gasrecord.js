@@ -2,6 +2,7 @@
     $.get(`/Vehicle/GetAddGasRecordPartialView?vehicleId=${GetVehicleId().vehicleId}`, function (data) {
         if (data) {
             $("#gasRecordModalContent").html(data);
+            prepareGasRecordModal(true);
             //initiate datepicker
             initDatePicker($('#gasRecordDate'));
             initTagSelector($("#gasRecordTag"));
@@ -25,6 +26,7 @@ function showEditGasRecordModal(gasRecordId, nocache) {
     $.get(`/Vehicle/GetGasRecordForEditById?gasRecordId=${gasRecordId}`, function (data) {
         if (data) {
             $("#gasRecordModalContent").html(data);
+            prepareGasRecordModal(true);
             //initiate datepicker
             initDatePicker($('#gasRecordDate'));
             initTagSelector($("#gasRecordTag"));
@@ -66,6 +68,14 @@ function saveGasRecordToVehicle(isEdit) {
     var formValues = getAndValidateGasRecordValues();
     //validate
     if (formValues.hasError) {
+        if (window.matchMedia('(max-width: 767.98px)').matches) {
+            if ($('#gasRecordModal .gas-mobile-optional .is-invalid').length) {
+                toggleGasMobileDetails(true);
+            }
+            const invalidField = document.querySelector('#gasRecordModal .is-invalid');
+            invalidField?.focus({ preventScroll: true });
+            invalidField?.scrollIntoView({ block: 'center', behavior: 'smooth' });
+        }
         errorToast("Please check the form data");
         return;
     }
@@ -85,6 +95,8 @@ function getAndValidateGasRecordValues() {
     let gasDate = $("#gasRecordDate").val();
     let gasMileage = parseInt(globalParseFloat($("#gasRecordMileage").val())).toString();
     let gasGallons = $("#gasRecordGallons").val();
+    let fuelGrade = $("#gasRecordFuelGrade").val();
+    let tireSeason = $("#gasRecordTireSeason").val();
     let gasCost = $("#gasRecordCost").val();
     let gasCostType = $("#gasCostType").val();
     let gasIsFillToFull = $("#gasIsFillToFull").is(":checked");
@@ -148,6 +160,8 @@ function getAndValidateGasRecordValues() {
         date: gasDate,
         mileage: gasMileage,
         gallons: gasGallons,
+        fuelGrade: fuelGrade,
+        tireSeason: tireSeason,
         cost: gasCost,
         files: uploadedFiles,
         supplies: selectedSupplies,
@@ -442,6 +456,7 @@ function editMultipleGasRecords(ids) {
     $.post('/Vehicle/GetGasRecordsEditModal', { recordIds: ids }, function (data) {
         if (data) {
             $("#gasRecordModalContent").html(data);
+            prepareGasRecordModal(false);
             //initiate datepicker
             initDatePicker($('#gasRecordDate'));
             initTagSelector($("#gasRecordTag"));
@@ -504,4 +519,29 @@ function saveMultipleGasRecordsToVehicle() {
             errorToast(data.message);
         }
     })
+}
+
+function setGasMobileTireSeason(value) {
+    const select = document.getElementById('gasRecordTireSeason');
+    if (!select) return;
+    select.value = value;
+    select.dispatchEvent(new Event('change', { bubbles: true }));
+    document.querySelectorAll('#gasRecordModal input[name="gasMobileTireSeason"]').forEach(input => {
+        input.checked = input.value === value;
+    });
+    document.querySelector('#gasRecordModal .gas-mobile-season-clear')?.setAttribute('aria-pressed', String(value === ''));
+}
+function prepareGasRecordModal(singleRecord) {
+    const modal = document.getElementById('gasRecordModal');
+    if (!modal) return;
+    modal.classList.toggle('gas-mobile-entry', singleRecord);
+    modal.classList.remove('gas-mobile-details-open');
+}
+function toggleGasMobileDetails(forceOpen) {
+    const modal = document.getElementById('gasRecordModal');
+    if (!modal) return;
+    const isOpen = typeof forceOpen === 'boolean' ? forceOpen : !modal.classList.contains('gas-mobile-details-open');
+    modal.classList.toggle('gas-mobile-details-open', isOpen);
+    const toggle = modal.querySelector('[data-gas-mobile-details-toggle]');
+    if (toggle) toggle.setAttribute('aria-expanded', String(isOpen));
 }

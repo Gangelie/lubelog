@@ -21,6 +21,8 @@ namespace CarCareTracker.Models
         public string Description { get; set; } = string.Empty;
         public string Notes { get; set; } = string.Empty;
         public string FuelConsumed { get; set; } = string.Empty;
+        public string FuelGrade { get; set; } = string.Empty;
+        public string TireSeason { get; set; } = string.Empty;
         public string Cost { get; set; } = string.Empty;
         public string Price { get; set; } = string.Empty;
         public string PartialFuelUp { get; set; } = string.Empty;
@@ -120,6 +122,15 @@ namespace CarCareTracker.Models
         public string Odometer { get; set; } = string.Empty;
         [JsonConverter(typeof(FromDecimalOptional))]
         public string FuelConsumed { get; set; } = string.Empty;
+        public string? FuelGrade { get; set; }
+        private string? tireSeason;
+        [JsonIgnore]
+        public bool TireSeasonSpecified { get; private set; }
+        public string? TireSeason
+        {
+            get => tireSeason;
+            set { tireSeason = value; TireSeasonSpecified = true; }
+        }
         [JsonConverter(typeof(FromDecimalOptional))]
         public string Cost { get; set; } = string.Empty;
         [JsonConverter(typeof(FromDecimalOptional))]
