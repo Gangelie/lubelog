@@ -66,6 +66,9 @@ function saveGasRecordToVehicle(isEdit) {
     var formValues = getAndValidateGasRecordValues();
     //validate
     if (formValues.hasError) {
+        if (window.matchMedia('(max-width: 767.98px)').matches && $('#gasRecordModal .gas-mobile-optional .is-invalid').length) {
+            toggleGasMobileDetails(true);
+        }
         errorToast("Please check the form data");
         return;
     }
@@ -508,4 +511,22 @@ function saveMultipleGasRecordsToVehicle() {
             errorToast(data.message);
         }
     })
+}
+
+function setGasMobileTireSeason(value) {
+    const select = document.getElementById('gasRecordTireSeason');
+    if (!select) return;
+    select.value = value;
+    select.dispatchEvent(new Event('change', { bubbles: true }));
+    document.querySelectorAll('#gasRecordModal input[name="gasMobileTireSeason"]').forEach(input => {
+        input.checked = input.value === value;
+    });
+}
+function toggleGasMobileDetails(forceOpen) {
+    const modal = document.getElementById('gasRecordModal');
+    if (!modal) return;
+    const isOpen = typeof forceOpen === 'boolean' ? forceOpen : !modal.classList.contains('gas-mobile-details-open');
+    modal.classList.toggle('gas-mobile-details-open', isOpen);
+    const toggle = modal.querySelector('[data-gas-mobile-details-toggle]');
+    if (toggle) toggle.setAttribute('aria-expanded', String(isOpen));
 }
