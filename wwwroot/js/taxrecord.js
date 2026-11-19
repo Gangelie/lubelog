@@ -3,7 +3,7 @@
         if (data) {
             $("#taxRecordModalContent").html(data);
             //initiate datepicker
-            initDatePicker($('#taxRecordDate'));
+            initDatePicker($('#taxRecordDate'), false, true);
             initTagSelector($("#taxRecordTag"));
             $('#taxRecordModal').modal('show');
         }
@@ -26,7 +26,7 @@ function showEditTaxRecordModal(taxRecordId, nocache) {
         if (data) {
             $("#taxRecordModalContent").html(data);
             //initiate datepicker
-            initDatePicker($('#taxRecordDate'));
+            initDatePicker($('#taxRecordDate'), false, true);
             initTagSelector($("#taxRecordTag"));
             $('#taxRecordModal').modal('show');
             bindModalInputChanges('taxRecordModal');

@@ -11,7 +11,7 @@
 }
 @model List<APIDocumentation>
 @section Scripts {
-    <script src="~/js/swigarette.js?v=@StaticHelper.VersionNumber"></script>
+    <script src="~/js/swigarette.js" asp-append-version="true"></script>
 }
 @section Nav {
     <div class="container-fluid lubelogger-navbar-container frosted hideOnPrint">
