@@ -61,6 +61,14 @@ try {
   })()`);
   if (!ready) throw new Error('Vehicle page did not load the fuel record script');
 
+  // Changed scripts must get a new URL so browsers cannot reuse stale copies.
+  const scriptVersions = await evaluate(`[...document.scripts].map(script => script.src)
+    .filter(src => /\\/js\\/(shared|vehicle|gasrecord|taxrecord)\\.js/.test(src))
+    .map(src => new URL(src).searchParams.get('v'))`);
+  if (scriptVersions.length !== 4 || scriptVersions.some(version => !version || /^\d+\.\d+\.\d+$/.test(version))) {
+    throw new Error(`Scripts are not content-versioned: ${JSON.stringify(scriptVersions)}`);
+  }
+
   // A future insurance payment must be selectable in Fees/Taxes without
   // relaxing the date restrictions on the other record types.
   const futureFeeDate = await evaluate(`(async () => {
@@ -78,7 +86,14 @@ try {
     if (!input.length || !input.data('datepicker')) throw new Error('Fees datepicker did not initialize');
     input.datepicker('setDate', new Date(2027, 0, 19));
     const result = input.datepicker('getDate');
+    // Bootstrap ignores hide() while the show transition is running.
+    const modalReady = () => !bootstrap.Modal.getInstance(document.querySelector('#taxRecordModal'))?._isTransitioning;
+    for (let i = 0; i < 100 && !modalReady(); i++)
+      await new Promise(resolve => setTimeout(resolve, 50));
     $('#taxRecordModal').modal('hide');
+    for (let i = 0; i < 100 && document.querySelector('#taxRecordModal.show, .modal-backdrop'); i++)
+      await new Promise(resolve => setTimeout(resolve, 50));
+    if (document.querySelector('#taxRecordModal.show, .modal-backdrop')) throw new Error('Fees modal did not close');
     return result?.getFullYear() === 2027 && result.getMonth() === 0 && result.getDate() === 19;
   })()`);
   if (!futureFeeDate) throw new Error('Future insurance payment date was blocked in Fees');
@@ -110,7 +125,18 @@ try {
       String(quickFuel.vehicleId) !== String(vehicleId)) {
     throw new Error(`Quick-fuel shortcut failed: ${JSON.stringify(quickFuel)}`);
   }
-  await evaluate("hideAddGasRecordModal()");
+  // Bootstrap ignores hide() during the show transition, so close the modal
+  // only once it is settled and wait until it is fully gone.
+  const quickFuelClosed = await evaluate(`(async () => {
+    const wait = () => new Promise(resolve => setTimeout(resolve, 50));
+    const transitioning = () => bootstrap.Modal.getInstance(document.querySelector('#gasRecordModal'))?._isTransitioning;
+    for (let i = 0; i < 100 && transitioning(); i++) await wait();
+    hideAddGasRecordModal();
+    for (let i = 0; i < 100 && (document.querySelector('#gasRecordModal.show, .modal-backdrop') || transitioning()); i++)
+      await wait();
+    return !document.querySelector('#gasRecordModal.show, .modal-backdrop');
+  })()`);
+  if (!quickFuelClosed) throw new Error('Quick-fuel modal did not close');
   await evaluate(`(() => {
     const buttons = [...document.querySelectorAll('button[data-bs-target="#gas-tab-pane"]')];
     const button = buttons.find(item => item.getClientRects().length) ?? buttons[0];
@@ -521,6 +547,15 @@ try {
   console.log(`PASS: mobile dropdown ${Math.round(geometry.selectWidth)}px at 375px; desktop dropdown ${Math.round(desktop.width)}px at 1280px`);
 } finally {
   socket?.close();
-  chrome.kill('SIGTERM');
-  fs.rmSync(profile, { recursive: true, force: true });
+  // Wait for Chromium to exit so profile cleanup cannot mask the real result.
+  if (chrome.exitCode === null) {
+    const exited = new Promise(resolve => chrome.once('exit', resolve));
+    chrome.kill('SIGTERM');
+    await Promise.race([exited, new Promise(resolve => setTimeout(resolve, 5000))]);
+  }
+  try {
+    fs.rmSync(profile, { recursive: true, force: true, maxRetries: 5, retryDelay: 200 });
+  } catch (error) {
+    console.warn(`Could not remove Chromium profile ${profile}: ${error.message}`);
+  }
 }

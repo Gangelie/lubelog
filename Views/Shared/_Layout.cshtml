@@ -47,7 +47,7 @@
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap-icons.css" />
     <link rel="stylesheet" href="~/lib/bootstrap-datepicker/css/bootstrap-datepicker.min.css" />
     <link rel="stylesheet" href="~/lib/bootstrap-tagsinput/bootstrap-tagsinput.css" />
-    <link rel="stylesheet" href="~/css/site.css?v=@StaticHelper.VersionNumber" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/loader.css"/>
     <link rel="stylesheet" href="~/css/theme.css" media="screen"/>
     <link rel="stylesheet" href="~/sweetalert/sweetalert2.min.css"/>
@@ -58,12 +58,12 @@
     <link rel="apple-touch-startup-image" href="~/defaults/lubelogger_launch.png" />
     <link rel="manifest" href="~/manifest.json">
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
-    <script src="~/js/shared.js?v=@StaticHelper.VersionNumber"></script>
+    <script src="~/js/shared.js" asp-append-version="true"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/lib/bootstrap-datepicker/js/bootstrap-datepicker.min.js"></script>
     <script src="~/lib/bootstrap-tagsinput/bootstrap-tagsinput.js"></script>
     <script src="~/sweetalert/sweetalert2.all.min.js"></script>
-    <script src="~/js/loader.js?v=@StaticHelper.VersionNumber"></script>
+    <script src="~/js/loader.js" asp-append-version="true"></script>
     <script>
         function getGlobalConfig() {
             return {

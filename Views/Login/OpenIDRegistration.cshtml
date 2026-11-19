@@ -10,7 +10,7 @@
     ViewData["Title"] = "Register";
 }
 @section Scripts {
-    <script src="~/js/login.js?v=@StaticHelper.VersionNumber"></script>
+    <script src="~/js/login.js" asp-append-version="true"></script>
 }
 @if (Model.RegistrationDisabled)
 {
