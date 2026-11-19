@@ -60,6 +60,57 @@ try {
     return false;
   })()`);
   if (!ready) throw new Error('Vehicle page did not load the fuel record script');
+
+  // A future insurance payment must be selectable in Fees/Taxes without
+  // relaxing the date restrictions on the other record types.
+  const futureFeeDate = await evaluate(`(async () => {
+    const tab = document.querySelector('.lubelogger-tab #tax-tab');
+    if (!tab) throw new Error('Fees tab is missing');
+    bootstrap.Tab.getOrCreateInstance(tab).show();
+    for (let i = 0; i < 100 && !document.querySelector('#tax-tab-pane button[onclick="showAddTaxRecordModal()"]'); i++)
+      await new Promise(resolve => setTimeout(resolve, 50));
+    if (!document.querySelector('#tax-tab-pane button[onclick="showAddTaxRecordModal()"]'))
+      throw new Error('Fees tab did not load');
+    showAddTaxRecordModal();
+    for (let i = 0; i < 100 && !document.querySelector('#taxRecordModal.show #taxRecordDate'); i++)
+      await new Promise(resolve => setTimeout(resolve, 50));
+    const input = $('#taxRecordDate');
+    if (!input.length || !input.data('datepicker')) throw new Error('Fees datepicker did not initialize');
+    input.datepicker('setDate', new Date(2027, 0, 19));
+    const result = input.datepicker('getDate');
+    $('#taxRecordModal').modal('hide');
+    return result?.getFullYear() === 2027 && result.getMonth() === 0 && result.getDate() === 19;
+  })()`);
+  if (!futureFeeDate) throw new Error('Future insurance payment date was blocked in Fees');
+
+  // The dashboard shortcut should load the current vehicle's Fuel tab
+  // and open the existing add-fuel modal, even when Fuel was not loaded.
+  const quickFuel = await evaluate(`(async () => {
+    const tab = document.querySelector('.lubelogger-tab #report-tab');
+    if (!tab) throw new Error('Dashboard tab is missing');
+    bootstrap.Tab.getOrCreateInstance(tab).show();
+    for (let i = 0; i < 100 && !document.querySelector('#report-tab-pane [onclick="showQuickAddGasRecord()"]'); i++)
+      await new Promise(resolve => setTimeout(resolve, 50));
+    const button = document.querySelector('#report-tab-pane [onclick="showQuickAddGasRecord()"]');
+    if (!button) throw new Error('Mobile quick-fuel button is missing');
+    const visible = !!button.getClientRects().length;
+    button.click();
+    button.click(); // Repeated taps must not open duplicate forms.
+    for (let i = 0; i < 100; i++) {
+      if (document.querySelector('#gasRecordModal.show #gasRecordDate')) {
+        return { visible, gasTabActive: document.querySelector('#gas-tab-pane').classList.contains('active'),
+          modalCount: document.querySelectorAll('#gasRecordModal').length,
+          vehicleId: GetVehicleId().vehicleId };
+      }
+      await new Promise(resolve => setTimeout(resolve, 50));
+    }
+    throw new Error('Quick-fuel shortcut did not open the fuel entry form');
+  })()`);
+  if (!quickFuel.visible || !quickFuel.gasTabActive || quickFuel.modalCount !== 1 ||
+      String(quickFuel.vehicleId) !== String(vehicleId)) {
+    throw new Error(`Quick-fuel shortcut failed: ${JSON.stringify(quickFuel)}`);
+  }
+  await evaluate("hideAddGasRecordModal()");
   await evaluate(`(() => {
     const buttons = [...document.querySelectorAll('button[data-bs-target="#gas-tab-pane"]')];
     const button = buttons.find(item => item.getClientRects().length) ?? buttons[0];
