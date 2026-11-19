@@ -161,8 +161,51 @@ function getVehicleGasRecords(vehicleId) {
             $("#gas-tab-pane").html(data);
             restoreScrollPosition();
             getVehicleHaveImportantReminders(vehicleId);
+            $("#gas-tab-pane").trigger('gasRecordsLoaded');
+        } else {
+            $("#gas-tab-pane").trigger('gasRecordsLoadFailed');
+        }
+    }).fail(function () {
+        $("#gas-tab-pane").trigger('gasRecordsLoadFailed');
+    });
+}
+
+let quickFuelEntryPending = false;
+
+function showQuickAddGasRecord() {
+    if (quickFuelEntryPending) return;
+
+    const gasTab = document.querySelector('.lubelogger-tab #gas-tab');
+    const gasPane = $('#gas-tab-pane');
+    if (!gasTab || !gasPane.length) return;
+
+    if (gasTab.classList.contains('active') && $('#gasRecordModalContent').length) {
+        showAddGasRecordModal();
+        return;
+    }
+
+    quickFuelEntryPending = true;
+    gasPane.off('.quickFuel');
+    gasPane.one('gasRecordsLoaded.quickFuel', function () {
+        quickFuelEntryPending = false;
+        gasPane.off('.quickFuel');
+        if ($('#gasRecordModalContent').length) {
+            showAddGasRecordModal();
+        } else {
+            errorToast('Unable to open the fuel entry form');
         }
     });
+    gasPane.one('gasRecordsLoadFailed.quickFuel', function () {
+        quickFuelEntryPending = false;
+        gasPane.off('.quickFuel');
+        errorToast('Unable to load fuel records');
+    });
+
+    if (gasTab.classList.contains('active')) {
+        getVehicleGasRecords(GetVehicleId().vehicleId);
+    } else {
+        bootstrap.Tab.getOrCreateInstance(gasTab).show();
+    }
 }
 function getVehicleCollisionRecords(vehicleId) {
     $.get(`/Vehicle/GetCollisionRecordsByVehicleId?vehicleId=${vehicleId}`, function (data) {
