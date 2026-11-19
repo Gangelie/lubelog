@@ -434,22 +434,18 @@ function initExtraFieldDatePicker(fieldName) {
         });
     }
 }
-function initDatePicker(input, futureOnly) {
+function initDatePicker(input, futureOnly, allowFuture) {
+    const options = {
+        format: getShortDatePattern().pattern,
+        autoclose: true,
+        weekStart: getGlobalConfig().firstDayOfWeek
+    };
     if (futureOnly) {
-        input.datepicker({
-            startDate: "+0d",
-            format: getShortDatePattern().pattern,
-            autoclose: true,
-            weekStart: getGlobalConfig().firstDayOfWeek
-        });
-    } else {
-        input.datepicker({
-            endDate: "+0d",
-            format: getShortDatePattern().pattern,
-            autoclose: true,
-            weekStart: getGlobalConfig().firstDayOfWeek
-        });
+        options.startDate = "+0d";
+    } else if (!allowFuture) {
+        options.endDate = "+0d";
     }
+    input.datepicker(options);
 }
 function initTagSelector(input, noDataList) {
     if (noDataList) {
